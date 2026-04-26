@@ -1,10 +1,30 @@
 /* config.js - 全局配置(供其它脚本引用) */
 
+/* config.js - 全局配置(供其它脚本引用) */
+
 window.AppConfig = {
   mapCenter: [36.1947, 117.1297],
   mapZoom: 14,
-  tileUrl: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-  tileAttribution: "© OpenStreetMap contributors",
+
+  // 天地图配置
+  tianditu: {
+    token: "你的密钥",
+    // 矢量底图 URL 模板(墨卡托投影,适配 Leaflet)
+    vecUrl:
+      "https://t{s}.tianditu.gov.cn/vec_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=vec&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk={token}",
+    // 矢量注记(地名、路名标注)
+    cvaUrl:
+      "https://t{s}.tianditu.gov.cn/cva_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=cva&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk={token}",
+    // 影像底图(可选,做卫星视图切换用)
+    imgUrl:
+      "https://t{s}.tianditu.gov.cn/img_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=img&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk={token}",
+    // 影像注记
+    ciaUrl:
+      "https://t{s}.tianditu.gov.cn/cia_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=cia&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk={token}",
+    subdomains: ["0", "1", "2", "3", "4", "5", "6", "7"],
+    attribution:
+      '© <a href="https://www.tianditu.gov.cn/" target="_blank">天地图</a> · 国家地理信息公共服务平台',
+  },
 
   dataPaths: {
     zones: "./data/zones.geojson",
