@@ -12,9 +12,34 @@ window.MapService = (function () {
   var _map = null;
   var _selectedLayer = null;
   var _zonesData = null;
-  var _zoneLayers = []; // [ { layer: L.Polygon, feature: GeoJSON Feature } ]
+  var _zoneLayers = [];
   var _onZoneSelected = null;
   var _onNoMatch = null;
+
+  // 把 URL 模板里的 {token} 替换成实际 token
+  function buildTiandituUrl(template, token) {
+    return template.replace("{token}", token);
+  }
+
+  // 加载天地图(矢量底图 + 注记)
+  function loadTiandituBaseLayers(map) {
+    var td = window.AppConfig.tianditu;
+
+    // 矢量底图
+    L.tileLayer(buildTiandituUrl(td.vecUrl, td.token), {
+      subdomains: td.subdomains,
+      attribution: td.attribution,
+      maxZoom: 18,
+      minZoom: 1,
+    }).addTo(map);
+
+    // 矢量注记(地名、路名)叠加在底图上
+    L.tileLayer(buildTiandituUrl(td.cvaUrl, td.token), {
+      subdomains: td.subdomains,
+      maxZoom: 18,
+      minZoom: 1,
+    }).addTo(map);
+  }
 
   // 初始化地图
   // params = { zones, schools, policies, onZoneSelected, onNoMatch }
@@ -38,18 +63,14 @@ window.MapService = (function () {
       window.AppConfig.mapZoom,
     );
 
-    // 加载底图
-    L.tileLayer(window.AppConfig.tileUrl, {
-      attribution: window.AppConfig.tileAttribution,
-      maxZoom: 19,
-    }).addTo(_map);
+    // 加载天地图底图
+    loadTiandituBaseLayers(_map);
 
     // 渲染学区
     if (_zonesData.features && _zonesData.features.length > 0) {
       _zonesData.features.forEach(function (feature) {
         addZoneLayer(feature);
       });
-      // 自适应视野到所有学区
       try {
         var geoLayer = L.geoJSON(_zonesData);
         _map.fitBounds(geoLayer.getBounds(), { padding: [20, 20] });
@@ -60,7 +81,6 @@ window.MapService = (function () {
       console.warn("学区数据为空,仅显示底图");
     }
 
-    // 监听地图点击(空白处或学区均会触发,但学区已 stopPropagation)
     _map.on("click", function (e) {
       handleMapClick(e);
     });
@@ -78,7 +98,6 @@ window.MapService = (function () {
     geoLayer.eachLayer(function (l) {
       _zoneLayers.push({ layer: l, feature: feature });
 
-      // hover
       l.on("mouseover", function () {
         if (l !== _selectedLayer) l.setStyle(styles.hover);
       });
@@ -86,7 +105,6 @@ window.MapService = (function () {
         if (l !== _selectedLayer) l.setStyle(styles.default);
       });
 
-      // 点击(关键:阻止事件冒泡到 map)
       l.on("click", function (e) {
         L.DomEvent.stopPropagation(e);
         selectLayer(l, feature);
@@ -96,7 +114,6 @@ window.MapService = (function () {
     geoLayer.addTo(_map);
   }
 
-  // 选中某个学区
   function selectLayer(layer, feature) {
     var styles = window.AppConfig.zoneStyle;
     if (_selectedLayer && _selectedLayer !== layer) {
@@ -109,7 +126,6 @@ window.MapService = (function () {
     }
   }
 
-  // 处理空白处点击 → Turf 点面判断
   function handleMapClick(e) {
     if (
       !_zonesData ||
@@ -120,7 +136,6 @@ window.MapService = (function () {
       return;
     }
 
-    // Leaflet e.latlng → Turf [lng, lat]
     var pt;
     try {
       pt = turf.point([e.latlng.lng, e.latlng.lat]);
@@ -146,7 +161,6 @@ window.MapService = (function () {
     if (matchedEntry) {
       selectLayer(matchedEntry.layer, matchedEntry.feature);
     } else {
-      // 取消之前的选中
       if (_selectedLayer) {
         _selectedLayer.setStyle(window.AppConfig.zoneStyle.default);
         _selectedLayer = null;
